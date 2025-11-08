@@ -5,9 +5,11 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import org.bukkit.Bukkit;
+import org.bukkit.OfflinePlayer;
 
 import java.io.File;
 import java.io.FileReader;
+import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -31,9 +33,10 @@ public class PlayerNameResolver {
      * @return Player name or UUID string if name cannot be resolved
      */
     public static String getPlayerName(UUID uuid) {
-        // Method 1: Try PlayerProfile API (Minecraft 1.21.4+)
+        // Method 1: Try getName() first (works in older versions)
         try {
-            String name = Bukkit.getOfflinePlayer(uuid).getPlayerProfile().getName();
+            OfflinePlayer player = Bukkit.getOfflinePlayer(uuid);
+            String name = player.getName();
             if (name != null && !name.isEmpty()) {
                 return name;
             }
@@ -41,13 +44,27 @@ public class PlayerNameResolver {
             // Ignore and try next method
         }
 
-        // Method 2: Try usercache.json
+        // Method 2: Try PlayerProfile API (Minecraft 1.21.4+) using reflection
+        try {
+            OfflinePlayer player = Bukkit.getOfflinePlayer(uuid);
+            Method getPlayerProfile = player.getClass().getMethod("getPlayerProfile");
+            Object profile = getPlayerProfile.invoke(player);
+            Method getName = profile.getClass().getMethod("getName");
+            String name = (String) getName.invoke(profile);
+            if (name != null && !name.isEmpty()) {
+                return name;
+            }
+        } catch (Exception e) {
+            // Ignore and try next method
+        }
+
+        // Method 3: Try usercache.json
         String nameFromCache = getNameFromUserCache(uuid);
         if (nameFromCache != null && !nameFromCache.isEmpty()) {
             return nameFromCache;
         }
 
-        // Method 3: Fallback to UUID string
+        // Method 4: Fallback to UUID string
         return uuid.toString();
     }
 
@@ -84,38 +101,79 @@ public class PlayerNameResolver {
                 return;
             }
 
+            // Read file content as string for compatibility
+            StringBuilder sb = new StringBuilder();
             FileReader reader = new FileReader(usercacheFile);
-            JsonArray jsonArray = JsonParser.parseReader(reader).getAsJsonArray();
-            reader.close();
-
-            for (JsonElement element : jsonArray) {
-                if (!element.isJsonObject()) {
-                    continue;
+            try {
+                int c;
+                while ((c = reader.read()) != -1) {
+                    sb.append((char) c);
                 }
-
-                JsonObject playerObj = element.getAsJsonObject();
-
-                if (!playerObj.has("uuid") || !playerObj.has("name")) {
-                    continue;
-                }
-
-                try {
-                    String uuidStr = playerObj.get("uuid").getAsString();
-                    String name = playerObj.get("name").getAsString();
-
-                    UUID uuid = UUID.fromString(uuidStr);
-                    nameCache.put(uuid, name);
-                } catch (Exception e) {
-                    // Skip invalid entries
-                    continue;
-                }
+            } finally {
+                reader.close();
             }
+
+            // Parse JSON with compatibility for different Gson versions
+            JsonArray jsonArray;
+            try {
+                // Try new static API first (Gson 2.8.6+)
+                try {
+                    Method parseString = JsonParser.class.getMethod("parseString", String.class);
+                    JsonElement element = (JsonElement) parseString.invoke(null, sb.toString());
+                    jsonArray = element.getAsJsonArray();
+                } catch (NoSuchMethodException e) {
+                    // Fallback to old API (Gson < 2.8.6) - try instance method
+                    try {
+                        JsonParser parser = new JsonParser();
+                        JsonElement element = parser.parse(sb.toString());
+                        jsonArray = element.getAsJsonArray();
+                    } catch (Exception e2) {
+                        // Last resort: try static parse method
+                        Method parse = JsonParser.class.getMethod("parse", String.class);
+                        JsonElement element = (JsonElement) parse.invoke(null, sb.toString());
+                        jsonArray = element.getAsJsonArray();
+                    }
+                }
+            } catch (Exception e) {
+                LOGGER.log(Level.WARNING, "Failed to parse usercache.json", e);
+                return;
+            }
+            processJsonArray(jsonArray);
+
 
             lastCacheUpdate = System.currentTimeMillis();
             LOGGER.info("Loaded " + nameCache.size() + " player names from usercache.json");
         } catch (Exception e) {
             LOGGER.log(Level.WARNING, "Failed to load usercache.json", e);
             nameCache = new HashMap<>(); // Use empty cache on error
+        }
+    }
+
+    /**
+     * Process JSON array and populate name cache
+     */
+    private static void processJsonArray(JsonArray jsonArray) {
+        for (JsonElement element : jsonArray) {
+            if (!element.isJsonObject()) {
+                continue;
+            }
+
+            JsonObject playerObj = element.getAsJsonObject();
+
+            if (!playerObj.has("uuid") || !playerObj.has("name")) {
+                continue;
+            }
+
+            try {
+                String uuidStr = playerObj.get("uuid").getAsString();
+                String name = playerObj.get("name").getAsString();
+
+                UUID uuid = UUID.fromString(uuidStr);
+                nameCache.put(uuid, name);
+            } catch (Exception e) {
+                // Skip invalid entries
+                continue;
+            }
         }
     }
 
