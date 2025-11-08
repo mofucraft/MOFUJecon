@@ -6,6 +6,7 @@ import jp.jyn.jbukkitlib.config.parser.template.variable.TemplateVariable;
 import jp.jyn.jbukkitlib.uuid.UUIDRegistry;
 import jp.jyn.jecon.repository.BalanceRepository;
 import jp.jyn.jecon.config.MessageConfig;
+import jp.jyn.jecon.util.PlayerNameResolver;
 import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
 
@@ -47,11 +48,9 @@ public class Top extends SubCommand {
 
         int i = offset;
         for (Map.Entry<UUID, BigDecimal> entry : top.entrySet()) {
-            // Use Bukkit API directly to get player name from UUID
-            String playerName = Bukkit.getOfflinePlayer(entry.getKey()).getName();
-            if (playerName == null) {
-                playerName = "Unknown";
-            }
+            // Use PlayerNameResolver to get player name from UUID
+            // This handles Minecraft 1.21.4+ where OfflinePlayer.getName() may return null
+            String playerName = PlayerNameResolver.getPlayerName(entry.getKey());
 
             variable.put("name", playerName);
             variable.put("uuid", entry.getKey()); // Secret variable
