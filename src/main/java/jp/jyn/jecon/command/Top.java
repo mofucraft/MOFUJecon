@@ -6,6 +6,7 @@ import jp.jyn.jbukkitlib.config.parser.template.variable.TemplateVariable;
 import jp.jyn.jbukkitlib.uuid.UUIDRegistry;
 import jp.jyn.jecon.repository.BalanceRepository;
 import jp.jyn.jecon.config.MessageConfig;
+import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
 
 import java.math.BigDecimal;
@@ -40,19 +41,25 @@ public class Top extends SubCommand {
 
         int offset = (page - 1) * ENTRY_PER_PAGE;
         Map<UUID, BigDecimal> top = repository.top(ENTRY_PER_PAGE, offset);
-        registry.getMultipleNameAsync(top.keySet()).thenAcceptSync(uuidMap -> {
-            TemplateVariable variable = StringVariable.init().put("page", page);
-            sender.sendMessage(message.topFirst.toString(variable));
 
-            int i = offset;
-            for (Map.Entry<UUID, BigDecimal> entry : top.entrySet()) {
-                variable.put("name", uuidMap.getOrDefault(entry.getKey(), "Unknown"));
-                variable.put("uuid", entry.getKey()); // Secret variable
-                variable.put("balance", repository.format(entry.getValue()));
-                variable.put("rank", ++i);
-                sender.sendMessage(message.topEntry.toString(variable));
+        TemplateVariable variable = StringVariable.init().put("page", page);
+        sender.sendMessage(message.topFirst.toString(variable));
+
+        int i = offset;
+        for (Map.Entry<UUID, BigDecimal> entry : top.entrySet()) {
+            // Use Bukkit API directly to get player name from UUID
+            String playerName = Bukkit.getOfflinePlayer(entry.getKey()).getName();
+            if (playerName == null) {
+                playerName = "Unknown";
             }
-        });
+
+            variable.put("name", playerName);
+            variable.put("uuid", entry.getKey()); // Secret variable
+            variable.put("balance", repository.format(entry.getValue()));
+            variable.put("rank", ++i);
+            sender.sendMessage(message.topEntry.toString(variable));
+        }
+
         return Result.OK;
     }
 
