@@ -26,10 +26,10 @@ database:
   # Database type. (sqlite/mysql)
   type: sqlite
   sqlite:
-    file: "jecon.db"
+    file: "mecon.db"
   mysql:
     host: "localhost:3306"
-    name: "jecon"
+    name: "mecon"
     username: "root"
     password: "your_mysql_password"
     # It is recommended to stop caching when using MySQL

@@ -1,5 +1,5 @@
-main: "jp.jyn.jecon.Jecon"
-name: "Jecon"
+main: "jp.jyn.mecon.Mecon"
+name: "Mecon"
 version: "${project.version}"
 website: "${project.url}"
 author: "HimaJyun( https://jyn.jp/ )"
@@ -9,62 +9,62 @@ loadbefore: ["Vault"]
 api-version: "1.15"
 
 commands:
-  jecon:
-    description: "/jecon help - Show helps."
+  mecon:
+    description: "/mecon help - Show helps."
     aliases: "money"
 
 permissions:
-  jecon.*:
+  mecon.*:
     children:
-      jecon.show: true
-      jecon.pay: true
-      jecon.show.other: true
-      jecon.set: true
-      jecon.give: true
-      jecon.take: true
-      jecon.create: true
-      jecon.remove: true
-      jecon.top: true
-      jecon.convert: true
-      jecon.reload: true
-      jecon.version: true
-  jecon.user:
+      mecon.show: true
+      mecon.pay: true
+      mecon.show.other: true
+      mecon.set: true
+      mecon.give: true
+      mecon.take: true
+      mecon.create: true
+      mecon.remove: true
+      mecon.top: true
+      mecon.convert: true
+      mecon.reload: true
+      mecon.version: true
+  mecon.user:
     children:
-      jecon.show: true
-      jecon.pay: true
-  jecon.op:
+      mecon.show: true
+      mecon.pay: true
+  mecon.op:
     children:
-      jecon.show.other: true
-      jecon.set: true
-      jecon.give: true
-      jecon.take: true
-      jecon.create: true
-      jecon.remove: true
-      jecon.top: true
-      jecon.convert: true
-      jecon.reload: true
-      jecon.version: true
-  jecon.show:
+      mecon.show.other: true
+      mecon.set: true
+      mecon.give: true
+      mecon.take: true
+      mecon.create: true
+      mecon.remove: true
+      mecon.top: true
+      mecon.convert: true
+      mecon.reload: true
+      mecon.version: true
+  mecon.show:
     default: true
-  jecon.pay:
+  mecon.pay:
     default: true
-  jecon.show.other:
+  mecon.show.other:
     default: op
-  jecon.set:
+  mecon.set:
     default: op
-  jecon.give:
+  mecon.give:
     default: op
-  jecon.take:
+  mecon.take:
     default: op
-  jecon.create:
+  mecon.create:
     default: op
-  jecon.remove:
+  mecon.remove:
     default: op
-  jecon.top:
+  mecon.top:
     default: op
-  jecon.convert:
+  mecon.convert:
     default: op
-  jecon.reload:
+  mecon.reload:
     default: op
-  jecon.version:
+  mecon.version:
     default: op

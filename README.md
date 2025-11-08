@@ -1,8 +1,8 @@
-# Jecon for MOFUCRAFT!!! 
+# Mecon for MOFUCRAFT!!! 
 Economy base plugin for Bukkit/Spigot  
-[日本語解説](https://e-craft.io/bukkit/plugin/jecon/)
+[日本語解説](https://e-craft.io/bukkit/plugin/mecon/)
 
-## Jecon features
+## Mecon features
 * UUID Ready
 * 1.15 Ready
 * Vault Ready
@@ -21,18 +21,18 @@ Economy base plugin for Bukkit/Spigot
 ## Command/Permission
 |Command|Permission|Description|Default|
 |:------|:---------|:----------|:------|
-|/money|jecon.show|Show your balance.|ALL|
-|/money show [player]|jecon.show.other|Show [player] balance.|OP|
-|/money pay &lt;player&gt; &lt;amount&gt;|jecon.pay|Send &lt;amount&gt; to &lt;player&gt;.|ALL|
-|/money set &lt;player&gt; &lt;balance&gt;|jecon.set|Set the balance of &lt;player&gt; to &lt;balance&gt;.|OP|
-|/money give &lt;player&gt; &lt;amount&gt;|jecon.give|Give &lt;amount&gt; to &lt;player&gt;.|OP|
-|/money take &lt;player&gt; &lt;amount&gt;|jecon.take|Take &lt;amount&gt; on &lt;player&gt;.|OP|
-|/money create &lt;player&gt; [balance]|jecon.create|Create &lt;player&gt; account.|OP|
-|/money remove &lt;player&gt;|jecon.remove|Remove &lt;player&gt; account.|OP|
-|/money top [page]|jecon.top|Show billionaires ranking.|OP|
-|/money convert|jecon.convert|Convert database.|OP|
-|/money reload|jecon.reload|Reload the config.|OP|
-|/money version|jecon.version|Show version and check new version.|OP|
+|/money|mecon.show|Show your balance.|ALL|
+|/money show [player]|mecon.show.other|Show [player] balance.|OP|
+|/money pay &lt;player&gt; &lt;amount&gt;|mecon.pay|Send &lt;amount&gt; to &lt;player&gt;.|ALL|
+|/money set &lt;player&gt; &lt;balance&gt;|mecon.set|Set the balance of &lt;player&gt; to &lt;balance&gt;.|OP|
+|/money give &lt;player&gt; &lt;amount&gt;|mecon.give|Give &lt;amount&gt; to &lt;player&gt;.|OP|
+|/money take &lt;player&gt; &lt;amount&gt;|mecon.take|Take &lt;amount&gt; on &lt;player&gt;.|OP|
+|/money create &lt;player&gt; [balance]|mecon.create|Create &lt;player&gt; account.|OP|
+|/money remove &lt;player&gt;|mecon.remove|Remove &lt;player&gt; account.|OP|
+|/money top [page]|mecon.top|Show billionaires ranking.|OP|
+|/money convert|mecon.convert|Convert database.|OP|
+|/money reload|mecon.reload|Reload the config.|OP|
+|/money version|mecon.version|Show version and check new version.|OP|
 |/money help|N/A|Show helps.|ALL|
 
 # API
@@ -49,7 +49,7 @@ Economy base plugin for Bukkit/Spigot
     <dependencies>
         <dependency>
             <groupId>jp.jyn</groupId>
-            <artifactId>Jecon</artifactId>
+            <artifactId>Mecon</artifactId>
             <version>2.2.0</version>
             <scope>provided</scope>
         </dependency>
@@ -60,26 +60,26 @@ Economy base plugin for Bukkit/Spigot
 ## Usage
 ```java
 public class Main extends JavaPlugin {
-    private Jecon jecon;
+    private Mecon mecon;
 
     @Override
     public void onEnable() {
         // get plugin
-        Plugin plugin = Bukkit.getPluginManager().getPlugin("Jecon");
+        Plugin plugin = Bukkit.getPluginManager().getPlugin("Mecon");
         if(plugin == null || !plugin.isEnabled()) {
             // not available
-            getLogger().warning("Jecon is not available.");
+            getLogger().warning("Mecon is not available.");
         }
 
-        this.jecon = (Jecon) plugin;
+        this.mecon = (Mecon) plugin;
     }
 
     public void usage(UUID uuid) {
         // get
-        jecon.getRepository().getDecimal(uuid);
+        mecon.getRepository().getDecimal(uuid);
 
         // set
-        jecon.getRepository().set(uuid, BigDecimal.ZERO);
+        mecon.getRepository().set(uuid, BigDecimal.ZERO);
     }
 }
 ```
