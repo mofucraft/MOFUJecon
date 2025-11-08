@@ -7,6 +7,8 @@ import jp.jyn.jbukkitlib.uuid.UUIDRegistry;
 import jp.jyn.jecon.repository.AbstractRepository;
 import jp.jyn.jecon.repository.BalanceRepository;
 import jp.jyn.jecon.config.MessageConfig;
+import org.bukkit.Bukkit;
+import org.bukkit.OfflinePlayer;
 import org.bukkit.command.CommandSender;
 
 import java.math.BigDecimal;
@@ -54,9 +56,22 @@ public class Top extends SubCommand {
                 String playerName = (String) entry.getValue()[0]; // Name from database
                 BigDecimal balance = (BigDecimal) entry.getValue()[1]; // Balance
 
-                // Fallback to UUID if name is null
+                // If name is null, try to fetch it from Bukkit and update database
                 if (playerName == null || playerName.isEmpty()) {
-                    playerName = entry.getKey().toString();
+                    UUID uuid = entry.getKey();
+
+                    // Try to get name from OfflinePlayer
+                    OfflinePlayer offlinePlayer = Bukkit.getOfflinePlayer(uuid);
+                    String fetchedName = offlinePlayer.getName();
+
+                    if (fetchedName != null && !fetchedName.isEmpty()) {
+                        playerName = fetchedName;
+                        // Update database with the fetched name
+                        ((AbstractRepository) repository).updatePlayerName(uuid, fetchedName);
+                    } else {
+                        // Final fallback to UUID string
+                        playerName = uuid.toString();
+                    }
                 }
 
                 variable.put("name", playerName);

@@ -21,6 +21,7 @@ import jp.jyn.jecon.db.Database;
 import jp.jyn.jecon.repository.BalanceRepository;
 import jp.jyn.jecon.repository.LazyRepository;
 import jp.jyn.jecon.repository.SyncRepository;
+import jp.jyn.jecon.util.UsercacheImporter;
 import net.milkbowl.vault.economy.Economy;
 import org.bukkit.Bukkit;
 import org.bukkit.command.PluginCommand;
@@ -72,6 +73,12 @@ public class Jecon extends JavaPlugin {
         // connect db
         Database db = Database.connect(main.database);
         destructor.addFirst(db::close);
+
+        // Import player names from usercache.json for existing accounts
+        // This populates names for players who haven't logged in since the migration
+        getServer().getScheduler().runTaskAsynchronously(this, () -> {
+            UsercacheImporter.importFromUsercache(db);
+        });
 
         // methods for internal use.
         Consumer<UUID> consistency;
