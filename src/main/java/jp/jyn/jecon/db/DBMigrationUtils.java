@@ -13,7 +13,7 @@ import java.util.UUID;
 public class DBMigrationUtils {
     private DBMigrationUtils() {}
 
-    public final static String CURRENT_VERSION = "2";
+    public final static String CURRENT_VERSION = "3";
     public final static String MIGRATION_ERROR_1 = "Unable to automatically migrate the database.";
     public final static String MIGRATION_ERROR_2 = "Check the document and check that the updating procedure is correct.";
     public final static String MIGRATION_EXCEPTION = "Unknown version(%s)";
@@ -96,6 +96,35 @@ public class DBMigrationUtils {
         } catch (SQLException e) {
             connection.rollback();
             throw e;
+        } finally {
+            connection.setAutoCommit(true);
+        }
+    }
+
+    /**
+     * Migrate from version 2 to version 3
+     * Adds 'name' column to account table for player name storage
+     *
+     * @param connection Database connection
+     * @throws SQLException if migration fails
+     */
+    public static void v2to3(Connection connection) throws SQLException {
+        try (Statement statement = connection.createStatement()) {
+            connection.setAutoCommit(false);
+            try {
+                // Add name column to account table
+                // SQLite: ALTER TABLE account ADD COLUMN name TEXT
+                // MySQL: ALTER TABLE account ADD COLUMN name VARCHAR(16)
+                statement.executeUpdate("ALTER TABLE `account` ADD COLUMN `name` VARCHAR(16)");
+
+                // Update version in meta table
+                statement.executeUpdate("UPDATE `meta` SET `value`='3' WHERE `key`='dbversion'");
+
+                connection.commit();
+            } catch (SQLException e) {
+                connection.rollback();
+                throw e;
+            }
         } finally {
             connection.setAutoCommit(true);
         }

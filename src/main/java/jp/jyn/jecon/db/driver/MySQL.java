@@ -23,7 +23,8 @@ public class MySQL extends Database {
             statement.executeUpdate(
                 "CREATE TABLE IF NOT EXISTS `account` (" +
                     "`id`   INT UNSIGNED NOT NULL PRIMARY KEY AUTO_INCREMENT," +
-                    "`uuid` BINARY(16)    NOT NULL UNIQUE KEY" +
+                    "`uuid` BINARY(16)    NOT NULL UNIQUE KEY," +
+                    "`name` VARCHAR(16)" +
                     ")"
             );
             statement.executeUpdate(
@@ -46,11 +47,22 @@ public class MySQL extends Database {
         }
 
         Logger logger = Jecon.getInstance().getLogger();
-        logger.info("Migrate MySQL");
+        logger.info("Migrate MySQL from version " + version);
 
         if (version.equals("1")) {
             v1to2(v1prefix());
-        } else {
+            version = "2";
+        }
+
+        if (version.equals("2")) {
+            try (Connection connection = hikari.getConnection()) {
+                DBMigrationUtils.v2to3(connection);
+                logger.info("Migration to version 3 completed");
+            } catch (SQLException e) {
+                logger.severe("Migration from version 2 to 3 failed");
+                throw new RuntimeException(e);
+            }
+        } else if (!version.equals(DBMigrationUtils.CURRENT_VERSION)) {
             logger.severe(DBMigrationUtils.MIGRATION_ERROR_1);
             logger.severe(DBMigrationUtils.MIGRATION_ERROR_2);
             throw new IllegalStateException(String.format(DBMigrationUtils.MIGRATION_EXCEPTION, version));

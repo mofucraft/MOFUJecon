@@ -2,6 +2,7 @@ package jp.jyn.jecon;
 
 import jp.jyn.jbukkitlib.util.PackagePrivate;
 import jp.jyn.jecon.config.MainConfig;
+import jp.jyn.jecon.repository.AbstractRepository;
 import jp.jyn.jecon.repository.BalanceRepository;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -49,6 +50,11 @@ class EventListener implements Listener {
 
         if (createAccountOnJoin) {
             repository.createAccount(player.getUniqueId(), defaultBalance);
+        }
+
+        // Update player name in database (for Minecraft 1.21.4+ compatibility)
+        if (repository instanceof AbstractRepository) {
+            ((AbstractRepository) repository).updatePlayerName(player.getUniqueId(), player.getName());
         }
     }
 

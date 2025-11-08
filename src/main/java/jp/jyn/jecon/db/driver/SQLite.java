@@ -22,7 +22,8 @@ public class SQLite extends Database {
             statement.executeUpdate(
                 "CREATE TABLE IF NOT EXISTS `account` (" +
                     "`id`   INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT," +
-                    "`uuid` BLOB    NOT NULL UNIQUE " +
+                    "`uuid` BLOB    NOT NULL UNIQUE," +
+                    "`name` TEXT" +
                     ")"
             );
             statement.executeUpdate(
@@ -45,11 +46,22 @@ public class SQLite extends Database {
         }
 
         Logger logger = Jecon.getInstance().getLogger();
-        logger.info("Migrate SQLite");
+        logger.info("Migrate SQLite from version " + version);
 
         if ("1".equals(version)) {
             v1to2();
-        } else {
+            version = "2";
+        }
+
+        if ("2".equals(version)) {
+            try (Connection connection = hikari.getConnection()) {
+                DBMigrationUtils.v2to3(connection);
+                logger.info("Migration to version 3 completed");
+            } catch (SQLException e) {
+                logger.severe("Migration from version 2 to 3 failed");
+                throw new RuntimeException(e);
+            }
+        } else if (!version.equals(DBMigrationUtils.CURRENT_VERSION)) {
             logger.severe(DBMigrationUtils.MIGRATION_ERROR_1);
             logger.severe(DBMigrationUtils.MIGRATION_ERROR_2);
             throw new IllegalStateException(String.format(DBMigrationUtils.MIGRATION_EXCEPTION, version));

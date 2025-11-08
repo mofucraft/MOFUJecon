@@ -169,6 +169,16 @@ public abstract class AbstractRepository implements BalanceRepository {
         return createAccount(uuid, decimal2long(balance));
     }
 
+    /**
+     * Update player name in database
+     *
+     * @param uuid Player UUID
+     * @param name Player name
+     */
+    public final void updatePlayerName(UUID uuid, String name) {
+        db.updatePlayerName(uuid, name);
+    }
+
     @Override
     public final Map<UUID, BigDecimal> top(int limit, int offset) {
         Map<UUID, BigDecimal> result = new LinkedHashMap<>();
@@ -184,6 +194,28 @@ public abstract class AbstractRepository implements BalanceRepository {
                 uuid = db.getUUID(id).orElse(null);
             }
             result.put(uuid, BigDecimal.valueOf(balance).scaleByPowerOfTen(-FRACTIONAL_DIGITS));
+        });
+
+        return result;
+    }
+
+    /**
+     * Get top players with their names from database
+     * This is more efficient than top() when you need player names
+     *
+     * @param limit Number of entries to return
+     * @param offset Offset for pagination
+     * @return Map of UUID to [name, balance] where balance is a BigDecimal
+     */
+    public final Map<UUID, Object[]> topWithNames(int limit, int offset) {
+        Map<UUID, Object[]> result = new LinkedHashMap<>();
+
+        db.topWithNames(limit, offset).forEach((uuid, data) -> {
+            String name = data[0]; // Player name (can be null)
+            long balanceRaw = Long.parseLong(data[1]); // Raw balance value
+            BigDecimal balance = BigDecimal.valueOf(balanceRaw).scaleByPowerOfTen(-FRACTIONAL_DIGITS);
+
+            result.put(uuid, new Object[]{name, balance});
         });
 
         return result;

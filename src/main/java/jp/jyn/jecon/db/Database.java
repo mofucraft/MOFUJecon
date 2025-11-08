@@ -214,6 +214,25 @@ public abstract class Database {
         }
     }
 
+    /**
+     * Update player name in database
+     *
+     * @param uuid Player UUID
+     * @param name Player name
+     */
+    public void updatePlayerName(UUID uuid, String name) {
+        try (Connection connection = hikari.getConnection();
+             PreparedStatement statement = connection.prepareStatement(
+                 "UPDATE `account` SET `name`=? WHERE `uuid`=?"
+             )) {
+            statement.setString(1, name);
+            statement.setBytes(2, UUIDBytes.toBytes(uuid));
+            statement.executeUpdate();
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     public Map<Integer, Long> top(int limit, int offset) {
         Map<Integer, Long> result = new LinkedHashMap<>();
         // Note: Table full scan will occur
@@ -227,6 +246,41 @@ public abstract class Database {
             try (ResultSet resultSet = statement.executeQuery()) {
                 while (resultSet.next()) {
                     result.put(resultSet.getInt("id"), resultSet.getLong("balance"));
+                }
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+        return result;
+    }
+
+    /**
+     * Get top players with their names
+     * Returns map of UUID to array [name, balance]
+     *
+     * @param limit Number of entries to return
+     * @param offset Offset for pagination
+     * @return LinkedHashMap of UUID to String[]{name, balance}
+     */
+    public Map<UUID, String[]> topWithNames(int limit, int offset) {
+        Map<UUID, String[]> result = new LinkedHashMap<>();
+        // Note: Table full scan will occur
+
+        try (Connection connection = hikari.getConnection();
+             PreparedStatement statement = connection.prepareStatement(
+                 "SELECT a.`uuid`, a.`name`, b.`balance` " +
+                 "FROM `balance` b " +
+                 "JOIN `account` a ON b.`id` = a.`id` " +
+                 "ORDER BY b.`balance` DESC LIMIT ? OFFSET ?"
+             )) {
+            statement.setInt(1, limit);
+            statement.setInt(2, offset);
+            try (ResultSet resultSet = statement.executeQuery()) {
+                while (resultSet.next()) {
+                    UUID uuid = UUIDBytes.fromBytes(resultSet.getBytes("uuid"));
+                    String name = resultSet.getString("name");
+                    long balance = resultSet.getLong("balance");
+                    result.put(uuid, new String[]{name, String.valueOf(balance)});
                 }
             }
         } catch (SQLException e) {

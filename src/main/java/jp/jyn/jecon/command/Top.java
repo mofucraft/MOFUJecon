@@ -4,10 +4,9 @@ import jp.jyn.jbukkitlib.command.SubCommand;
 import jp.jyn.jbukkitlib.config.parser.template.variable.StringVariable;
 import jp.jyn.jbukkitlib.config.parser.template.variable.TemplateVariable;
 import jp.jyn.jbukkitlib.uuid.UUIDRegistry;
+import jp.jyn.jecon.repository.AbstractRepository;
 import jp.jyn.jecon.repository.BalanceRepository;
 import jp.jyn.jecon.config.MessageConfig;
-import jp.jyn.jecon.util.PlayerNameResolver;
-import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
 
 import java.math.BigDecimal;
@@ -41,22 +40,43 @@ public class Top extends SubCommand {
         }
 
         int offset = (page - 1) * ENTRY_PER_PAGE;
-        Map<UUID, BigDecimal> top = repository.top(ENTRY_PER_PAGE, offset);
 
         TemplateVariable variable = StringVariable.init().put("page", page);
         sender.sendMessage(message.topFirst.toString(variable));
 
-        int i = offset;
-        for (Map.Entry<UUID, BigDecimal> entry : top.entrySet()) {
-            // Use PlayerNameResolver to get player name from UUID
-            // This handles Minecraft 1.21.4+ where OfflinePlayer.getName() may return null
-            String playerName = PlayerNameResolver.getPlayerName(entry.getKey());
+        // Use topWithNames() to get player names directly from database
+        // This is more efficient and reliable for Minecraft 1.21.4+
+        if (repository instanceof AbstractRepository) {
+            Map<UUID, Object[]> topWithNames = ((AbstractRepository) repository).topWithNames(ENTRY_PER_PAGE, offset);
 
-            variable.put("name", playerName);
-            variable.put("uuid", entry.getKey()); // Secret variable
-            variable.put("balance", repository.format(entry.getValue()));
-            variable.put("rank", ++i);
-            sender.sendMessage(message.topEntry.toString(variable));
+            int i = offset;
+            for (Map.Entry<UUID, Object[]> entry : topWithNames.entrySet()) {
+                String playerName = (String) entry.getValue()[0]; // Name from database
+                BigDecimal balance = (BigDecimal) entry.getValue()[1]; // Balance
+
+                // Fallback to UUID if name is null
+                if (playerName == null || playerName.isEmpty()) {
+                    playerName = entry.getKey().toString();
+                }
+
+                variable.put("name", playerName);
+                variable.put("uuid", entry.getKey()); // Secret variable
+                variable.put("balance", repository.format(balance));
+                variable.put("rank", ++i);
+                sender.sendMessage(message.topEntry.toString(variable));
+            }
+        } else {
+            // Fallback to old method if not AbstractRepository
+            Map<UUID, BigDecimal> top = repository.top(ENTRY_PER_PAGE, offset);
+
+            int i = offset;
+            for (Map.Entry<UUID, BigDecimal> entry : top.entrySet()) {
+                variable.put("name", entry.getKey().toString());
+                variable.put("uuid", entry.getKey()); // Secret variable
+                variable.put("balance", repository.format(entry.getValue()));
+                variable.put("rank", ++i);
+                sender.sendMessage(message.topEntry.toString(variable));
+            }
         }
 
         return Result.OK;
