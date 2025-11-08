@@ -38,7 +38,9 @@ public class UsercacheImporter {
             LOGGER.info("Importing player names from usercache.json...");
 
             FileReader reader = new FileReader(usercacheFile);
-            JsonArray jsonArray = JsonParser.parseReader(reader).getAsJsonArray();
+            // Use old Gson API for compatibility with Spigot/Paper bundled Gson
+            JsonParser parser = new JsonParser();
+            JsonArray jsonArray = parser.parse(reader).getAsJsonArray();
             reader.close();
 
             for (JsonElement element : jsonArray) {
